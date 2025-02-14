@@ -9,8 +9,6 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-const MaxFormMemory = 32 << 20
-
 const (
 	HeaderAccept        = "Accept"
 	HeaderAuthorization = "Authorization"
@@ -20,9 +18,10 @@ const (
 const (
 	ContentText          = "text/plain; charset=utf-8"
 	ContentJSON          = "application/json"
+	ContentXML           = "application/xml"
 	ContentForm          = "application/x-www-form-urlencoded"
 	ContentStream        = "application/octet-stream"
-	ContentFormMultipart = "multipart/form-data"
+	ContentMultipartForm = "multipart/form-data"
 )
 
 func NewClient() *resty.Client {

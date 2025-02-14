@@ -265,7 +265,7 @@ func (c *ClientV3) UploadWithReader(ctx context.Context, reqPath, fieldName, fil
 // Authorization 生成签名并返回 HTTP Authorization
 func (c *ClientV3) Authorization(method, path string, query url.Values, body []byte, header http.Header) (string, error) {
 	if c.prvKey == nil {
-		return "", errors.New("private key not found (forgotten configure?)")
+		return "", errors.New("missing private key (forgotten configure?)")
 	}
 
 	authStr := fmt.Sprintf("app_id=%s,nonce=%s,timestamp=%d", c.appid, internal.Nonce(32), time.Now().UnixMilli())
@@ -302,7 +302,7 @@ func (c *ClientV3) Authorization(method, path string, query url.Values, body []b
 // Verify 验证签名
 func (c *ClientV3) Verify(header http.Header, body []byte) error {
 	if c.pubKey == nil {
-		return errors.New("public key not found (forgotten configure?)")
+		return errors.New("missing public key (forgotten configure?)")
 	}
 
 	signByte, err := base64.StdEncoding.DecodeString(header.Get(HeaderSignature))

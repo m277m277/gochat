@@ -18,18 +18,12 @@ import (
 	"github.com/yiigo/sdk-go/internal"
 )
 
-// ServerConfig 服务器配置
-type ServerConfig struct {
-	token  string
-	aeskey string
-}
-
 // OfficialAccount 微信公众号
 type OfficialAccount struct {
 	host   string
 	appid  string
 	secret string
-	srvCfg *ServerConfig
+	srvCfg ServerConfig
 	token  atomic.Value
 	client *resty.Client
 	logger func(ctx context.Context, err error, data map[string]string)
@@ -469,6 +463,9 @@ func (oa *OfficialAccount) UploadWithReader(ctx context.Context, reqPath, fieldN
 //	[安全模式] URL参数中的 msg_signature、timestamp、nonce 和 包体内的 Encrypt 字段
 //	[参考](https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Message_encryption_and_decryption_instructions.html)
 func (oa *OfficialAccount) VerifyEventMsg(signature string, items ...string) error {
+	if len(oa.srvCfg.token) == 0 || len(oa.srvCfg.aeskey) == 0 {
+		return errors.New("missing server config (forgotten configure?)")
+	}
 	if v := SignWithSHA1(oa.srvCfg.token, items...); v != signature {
 		return fmt.Errorf("signature verified fail, expect=%s, actual=%s", signature, v)
 	}
@@ -481,6 +478,9 @@ func (oa *OfficialAccount) VerifyEventMsg(signature string, items ...string) err
 //	根据配置的数据格式，解析 XML/JSON
 //	[参考](https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Message_encryption_and_decryption_instructions.html)
 func (oa *OfficialAccount) DecodeEventMsg(encrypt string) ([]byte, error) {
+	if len(oa.srvCfg.token) == 0 || len(oa.srvCfg.aeskey) == 0 {
+		return nil, errors.New("missing server config (forgotten configure?)")
+	}
 	return EventDecrypt(oa.appid, oa.srvCfg.aeskey, encrypt)
 }
 
@@ -489,6 +489,9 @@ func (oa *OfficialAccount) DecodeEventMsg(encrypt string) ([]byte, error) {
 //	根据配置的数据格式，输出 XML/JSON
 //	[参考](https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Message_encryption_and_decryption_instructions.html)
 func (oa *OfficialAccount) EncodeEventReply(msg V) (V, error) {
+	if len(oa.srvCfg.token) == 0 || len(oa.srvCfg.aeskey) == 0 {
+		return nil, errors.New("missing server config (forgotten configure?)")
+	}
 	return EventReply(oa.appid, oa.srvCfg.token, oa.srvCfg.aeskey, msg)
 }
 
@@ -525,7 +528,6 @@ func NewOfficialAccount(appid, secret string, options ...OAOption) *OfficialAcco
 		host:   "https://api.weixin.qq.com",
 		appid:  appid,
 		secret: secret,
-		srvCfg: new(ServerConfig),
 		client: internal.NewClient(),
 	}
 	for _, f := range options {

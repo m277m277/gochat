@@ -23,7 +23,7 @@ type Corp struct {
 	host   string
 	corpid string
 	secret string
-	srvCfg *ServerConfig
+	srvCfg ServerConfig
 	token  atomic.Value
 	client *resty.Client
 	logger func(ctx context.Context, err error, data map[string]string)
@@ -352,6 +352,9 @@ func (c *Corp) UploadWithReader(ctx context.Context, reqPath, fieldName, fileNam
 //
 //	[参考](https://developer.work.weixin.qq.com/document/path/90930)
 func (c *Corp) VerifyEventMsg(signature string, items ...string) error {
+	if len(c.srvCfg.token) == 0 || len(c.srvCfg.aeskey) == 0 {
+		return errors.New("missing server config (forgotten configure?)")
+	}
 	if v := SignWithSHA1(c.srvCfg.token, items...); v != signature {
 		return fmt.Errorf("signature verified fail, expect=%s, actual=%s", signature, v)
 	}
@@ -363,6 +366,9 @@ func (c *Corp) VerifyEventMsg(signature string, items ...string) error {
 //	使用包体内的 Encrypt 字段
 //	[参考](https://developer.work.weixin.qq.com/document/path/96211)
 func (c *Corp) DecodeEventMsg(encrypt string) ([]byte, error) {
+	if len(c.srvCfg.token) == 0 || len(c.srvCfg.aeskey) == 0 {
+		return nil, errors.New("missing server config (forgotten configure?)")
+	}
 	return EventDecrypt(c.corpid, c.srvCfg.aeskey, encrypt)
 }
 
@@ -370,6 +376,9 @@ func (c *Corp) DecodeEventMsg(encrypt string) ([]byte, error) {
 //
 //	[参考](https://developer.work.weixin.qq.com/document/path/96211)
 func (c *Corp) EncodeEventReply(msg V) (V, error) {
+	if len(c.srvCfg.token) == 0 || len(c.srvCfg.aeskey) == 0 {
+		return nil, errors.New("missing server config (forgotten configure?)")
+	}
 	return EventReply(c.corpid, c.srvCfg.token, c.srvCfg.aeskey, msg)
 }
 
@@ -406,7 +415,6 @@ func NewCorp(corpid, secret string, options ...CorpOption) *Corp {
 		host:   "https://qyapi.weixin.qq.com",
 		corpid: corpid,
 		secret: secret,
-		srvCfg: new(ServerConfig),
 		client: internal.NewClient(),
 	}
 	for _, f := range options {

@@ -37,8 +37,8 @@ type MiniProgram struct {
 	host   string
 	appid  string
 	secret string
-	srvCfg *ServerConfig
-	sfMode *SafeMode
+	srvCfg ServerConfig
+	sfMode SafeMode
 	token  atomic.Value
 	client *resty.Client
 
@@ -179,7 +179,7 @@ func (mp *MiniProgram) doSafe(ctx context.Context, method, path string, query ur
 
 func (mp *MiniProgram) encrypt(log *internal.ReqLog, path string, query url.Values, params X, timestamp int64) (X, error) {
 	if len(mp.sfMode.aeskey) == 0 {
-		return nil, errors.New("aes-gcm key not found (forgotten configure?)")
+		return nil, errors.New("missing aes-gcm key (forgotten configure?)")
 	}
 
 	if params == nil {
@@ -229,7 +229,7 @@ func (mp *MiniProgram) encrypt(log *internal.ReqLog, path string, query url.Valu
 
 func (mp *MiniProgram) sign(path string, timestamp int64, body []byte) (string, error) {
 	if mp.sfMode.prvKey == nil {
-		return "", errors.New("private key not found (forgotten configure?)")
+		return "", errors.New("missing private key (forgotten configure?)")
 	}
 
 	var builder strings.Builder
@@ -251,7 +251,7 @@ func (mp *MiniProgram) sign(path string, timestamp int64, body []byte) (string, 
 
 func (mp *MiniProgram) verify(path string, header http.Header, body []byte) error {
 	if mp.sfMode.pubKey == nil {
-		return errors.New("public key not found (forgotten configure?)")
+		return errors.New("missing public key (forgotten configure?)")
 	}
 
 	if appid := header.Get(HeaderMPAppID); appid != mp.appid {
@@ -288,7 +288,7 @@ func (mp *MiniProgram) verify(path string, header http.Header, body []byte) erro
 
 func (mp *MiniProgram) decrypt(path string, header http.Header, body []byte) ([]byte, error) {
 	if len(mp.sfMode.aeskey) == 0 {
-		return nil, errors.New("aes-gcm key not found (forgotten configure?)")
+		return nil, errors.New("missing aes-gcm key (forgotten configure?)")
 	}
 
 	key, err := base64.StdEncoding.DecodeString(mp.sfMode.aeskey)
@@ -705,6 +705,9 @@ func (mp *MiniProgram) DecodeEncryptData(sessionKey, iv, encryptData string) ([]
 //
 //	[参考](https://developers.weixin.qq.com/miniprogram/dev/framework/server-ability/message-push.html)
 func (mp *MiniProgram) VerifyEventMsg(signature string, items ...string) error {
+	if len(mp.srvCfg.token) == 0 || len(mp.srvCfg.aeskey) == 0 {
+		return errors.New("missing server config (forgotten configure?)")
+	}
 	if v := SignWithSHA1(mp.srvCfg.token, items...); v != signature {
 		return fmt.Errorf("signature verified fail, expect=%s, actual=%s", signature, v)
 	}
@@ -717,6 +720,9 @@ func (mp *MiniProgram) VerifyEventMsg(signature string, items ...string) error {
 //	根据配置的数据格式，解析 XML/JSON
 //	[参考](https://developers.weixin.qq.com/miniprogram/dev/framework/server-ability/message-push.html)
 func (mp *MiniProgram) DecodeEventMsg(encrypt string) ([]byte, error) {
+	if len(mp.srvCfg.token) == 0 || len(mp.srvCfg.aeskey) == 0 {
+		return nil, errors.New("missing server config (forgotten configure?)")
+	}
 	return EventDecrypt(mp.appid, mp.srvCfg.aeskey, encrypt)
 }
 
@@ -725,6 +731,9 @@ func (mp *MiniProgram) DecodeEventMsg(encrypt string) ([]byte, error) {
 //	根据配置的数据格式，输出 XML/JSON
 //	[参考](https://developers.weixin.qq.com/miniprogram/dev/framework/server-ability/message-push.html)
 func (mp *MiniProgram) EncodeEventReply(msg V) (V, error) {
+	if len(mp.srvCfg.token) == 0 || len(mp.srvCfg.aeskey) == 0 {
+		return nil, errors.New("missing server config (forgotten configure?)")
+	}
 	return EventReply(mp.appid, mp.srvCfg.token, mp.srvCfg.aeskey, msg)
 }
 
@@ -784,7 +793,6 @@ func NewMiniProgram(appid, secret string, options ...MPOption) *MiniProgram {
 		host:   "https://api.weixin.qq.com",
 		appid:  appid,
 		secret: secret,
-		srvCfg: new(ServerConfig),
 		client: internal.NewClient(),
 	}
 	for _, f := range options {

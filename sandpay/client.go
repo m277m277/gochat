@@ -75,7 +75,7 @@ func (c *Client) Do(ctx context.Context, reqURL string, form *Form) (*Form, erro
 // Verify 验证并解析杉德API结果或回调通知
 func (c *Client) Verify(form url.Values) (*Form, error) {
 	if c.pubKey == nil {
-		return nil, errors.New("public key is nil (forgotten configure?)")
+		return nil, errors.New("missing public key (forgotten configure?)")
 	}
 
 	sign, err := base64.StdEncoding.DecodeString(strings.Replace(form.Get("sign"), " ", "+", -1))

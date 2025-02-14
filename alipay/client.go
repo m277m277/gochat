@@ -214,7 +214,7 @@ func (c *Client) UploadWithReader(ctx context.Context, method string, fieldName,
 
 func (c *Client) verifyResp(key string, body []byte) (gjson.Result, error) {
 	if c.pubKey == nil {
-		return internal.Fail(errors.New("public key is nil (forgotten configure?)"))
+		return internal.Fail(errors.New("missing public key (forgotten configure?)"))
 	}
 
 	ret := gjson.ParseBytes(body)
@@ -288,7 +288,7 @@ func (c *Client) Decrypt(encryptData string) ([]byte, error) {
 // DecodeEncryptData 解析加密数据，如：授权的用户信息和手机号
 func (c *Client) DecodeEncryptData(hash crypto.Hash, data, sign string) ([]byte, error) {
 	if c.pubKey == nil {
-		return nil, errors.New("public key is nil (forgotten configure?)")
+		return nil, errors.New("missing public key (forgotten configure?)")
 	}
 
 	signByte, err := base64.StdEncoding.DecodeString(sign)
@@ -304,7 +304,7 @@ func (c *Client) DecodeEncryptData(hash crypto.Hash, data, sign string) ([]byte,
 // VerifyNotify 验证回调通知表单数据
 func (c *Client) VerifyNotify(form url.Values) (V, error) {
 	if c.pubKey == nil {
-		return nil, errors.New("public key is nil (forgotten configure?)")
+		return nil, errors.New("missing public key (forgotten configure?)")
 	}
 
 	sign, err := base64.StdEncoding.DecodeString(form.Get("sign"))

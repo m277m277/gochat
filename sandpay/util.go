@@ -25,7 +25,7 @@ type Form struct {
 // URLEncode 数据表单格式化为POST表单
 func (f *Form) URLEncode(mid string, key *xcrypto.PrivateKey) (string, error) {
 	if key == nil {
-		return "", errors.New("private key is nil (forgotten configure?)")
+		return "", errors.New("missing private key (forgotten configure?)")
 	}
 
 	f.Head["mid"] = mid

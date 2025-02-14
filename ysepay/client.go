@@ -113,7 +113,7 @@ func (c *Client) PostForm(ctx context.Context, api, serviceNO string, bizData V)
 // reqForm 生成请求表单
 func (c *Client) reqForm(reqID, serviceNO string, bizData V) (string, error) {
 	if c.prvKey == nil {
-		return "", errors.New("private key is nil (forgotten configure?)")
+		return "", errors.New("missing private key (forgotten configure?)")
 	}
 
 	v := V{}
@@ -145,7 +145,7 @@ func (c *Client) reqForm(reqID, serviceNO string, bizData V) (string, error) {
 
 func (c *Client) verifyResp(body []byte) (gjson.Result, error) {
 	if c.pubKey == nil {
-		return internal.Fail(errors.New("public key is nil (forgotten configure?)"))
+		return internal.Fail(errors.New("missing public key (forgotten configure?)"))
 	}
 
 	ret := gjson.ParseBytes(body)
@@ -178,7 +178,7 @@ func (c *Client) verifyResp(body []byte) (gjson.Result, error) {
 // VerifyNotify 解析并验证异步回调通知，返回BizJSON数据
 func (c *Client) VerifyNotify(form url.Values) (gjson.Result, error) {
 	if c.pubKey == nil {
-		return internal.Fail(errors.New("public key is nil (forgotten configure?)"))
+		return internal.Fail(errors.New("missing public key (forgotten configure?)"))
 	}
 
 	sign, err := base64.StdEncoding.DecodeString(form.Get("sign"))

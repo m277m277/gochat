@@ -11,6 +11,12 @@ type X map[string]any
 
 type Form map[string]string
 
+// ServerConfig 服务器配置
+type ServerConfig struct {
+	token  string
+	aeskey string
+}
+
 // APIResult API结果 (支付v3)
 type APIResult struct {
 	Code int // HTTP状态码

@@ -27,7 +27,7 @@ func (a *Action) RespKey() string {
 // Encode 签名并生成请求Body
 func (a *Action) Encode(c *Client) (string, error) {
 	if c.prvKey == nil {
-		return "", errors.New("private key is nil (forgotten configure?)")
+		return "", errors.New("missing private key (forgotten configure?)")
 	}
 
 	v := make(V)

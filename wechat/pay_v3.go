@@ -63,7 +63,7 @@ func (p *PayV3) url(path string, query url.Values) string {
 func (p *PayV3) publicKey(serialNO string) (*xcrypto.PublicKey, error) {
 	v := p.pubKey.Load()
 	if v == nil {
-		return nil, errors.New("public key is empty (forgotten auto load?)")
+		return nil, errors.New("missing public key (forgotten auto load?)")
 	}
 	keyMap, ok := v.(map[string]*xcrypto.PublicKey)
 	if !ok {
@@ -356,7 +356,7 @@ func (p *PayV3) Download(ctx context.Context, downloadURL string, w io.Writer) e
 // Authorization 生成签名并返回 HTTP Authorization
 func (p *PayV3) Authorization(method, path string, query url.Values, body string) (string, error) {
 	if p.prvKey == nil {
-		return "", errors.New("private key not found (forgotten configure?)")
+		return "", errors.New("missing private key (forgotten configure?)")
 	}
 
 	nonce := internal.Nonce(32)
