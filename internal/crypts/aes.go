@@ -1,4 +1,4 @@
-package xcrypto
+package crypts
 
 import (
 	"crypto/aes"

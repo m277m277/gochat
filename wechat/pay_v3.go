@@ -19,7 +19,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
 )
 
 // PayV3 微信支付V3
@@ -28,8 +28,8 @@ type PayV3 struct {
 	mchid  string
 	apikey string
 	prvSN  string
-	prvKey *xcrypto.PrivateKey
-	pubKey atomic.Value // map[string]*xcrypto.PublicKey
+	prvKey *crypts.PrivateKey
+	pubKey atomic.Value // map[string]*crypts.PublicKey
 	client *resty.Client
 	logger func(ctx context.Context, err error, data map[string]string)
 }
@@ -60,12 +60,12 @@ func (p *PayV3) url(path string, query url.Values) string {
 	return builder.String()
 }
 
-func (p *PayV3) publicKey(serialNO string) (*xcrypto.PublicKey, error) {
+func (p *PayV3) publicKey(serialNO string) (*crypts.PublicKey, error) {
 	v := p.pubKey.Load()
 	if v == nil {
 		return nil, errors.New("missing public key (forgotten auto load?)")
 	}
-	keyMap, ok := v.(map[string]*xcrypto.PublicKey)
+	keyMap, ok := v.(map[string]*crypts.PublicKey)
 	if !ok {
 		return nil, errors.New("public key is not map[string]*PublicKey")
 	}
@@ -110,7 +110,7 @@ func (p *PayV3) reloadCerts() error {
 		return errors.New(text)
 	}
 
-	keyMap := make(map[string]*xcrypto.PublicKey)
+	keyMap := make(map[string]*crypts.PublicKey)
 	headSerial := resp.Header().Get(HeaderPaySerial)
 
 	ret := gjson.GetBytes(resp.Body(), "data")
@@ -122,12 +122,12 @@ func (p *PayV3) reloadCerts() error {
 		data := cert.Get("ciphertext").String()
 		aad := cert.Get("associated_data").String()
 
-		block, err := xcrypto.AESDecryptGCM([]byte(p.apikey), []byte(nonce), []byte(data), []byte(aad), nil)
+		block, err := crypts.AESDecryptGCM([]byte(p.apikey), []byte(nonce), []byte(data), []byte(aad), nil)
 		if err != nil {
 			log.SetError(err)
 			return err
 		}
-		key, err := xcrypto.NewPublicKeyFromDerBlock(block)
+		key, err := crypts.NewPublicKeyFromDerBlock(block)
 		if err != nil {
 			log.SetError(err)
 			return err
@@ -495,7 +495,7 @@ func WithPayV3Client(cli *http.Client) PayV3Option {
 }
 
 // WithPayV3PrivateKey 设置支付(v3)商户RSA私钥
-func WithPayV3PrivateKey(serialNO string, key *xcrypto.PrivateKey) PayV3Option {
+func WithPayV3PrivateKey(serialNO string, key *crypts.PrivateKey) PayV3Option {
 	return func(p *PayV3) {
 		p.prvSN = serialNO
 		p.prvKey = key

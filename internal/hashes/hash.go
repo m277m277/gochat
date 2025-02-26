@@ -1,4 +1,4 @@
-package xhash
+package hashes
 
 import (
 	"crypto"
@@ -33,7 +33,7 @@ func SHA256(s string) string {
 // Hash 计算指定算法的hash值
 func Hash(hash crypto.Hash, str string) (string, error) {
 	if !hash.Available() {
-		return "", fmt.Errorf("xcrypto: requested xhash function (%s) is unavailable", hash.String())
+		return "", fmt.Errorf("hash function (%s) is unavailable", hash.String())
 	}
 	h := hash.New()
 	h.Write([]byte(str))

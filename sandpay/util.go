@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/value"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
+	"github.com/yiigo/sdk-go/internal/values"
 )
 
-type V = value.V
+type V = values.V
 
 const OK = "000000"
 
@@ -23,7 +23,7 @@ type Form struct {
 }
 
 // URLEncode 数据表单格式化为POST表单
-func (f *Form) URLEncode(mid string, key *xcrypto.PrivateKey) (string, error) {
+func (f *Form) URLEncode(mid string, key *crypts.PrivateKey) (string, error) {
 	if key == nil {
 		return "", errors.New("missing private key (forgotten configure?)")
 	}

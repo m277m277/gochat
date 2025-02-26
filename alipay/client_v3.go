@@ -19,7 +19,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
 )
 
 // ClientV3 支付宝V3客户端(仅支持v3版本的接口可用)
@@ -27,8 +27,8 @@ type ClientV3 struct {
 	host   string
 	appid  string
 	aesKey string
-	prvKey *xcrypto.PrivateKey
-	pubKey *xcrypto.PublicKey
+	prvKey *crypts.PrivateKey
+	pubKey *crypts.PublicKey
 	client *resty.Client
 	logger func(ctx context.Context, err error, data map[string]string)
 }
@@ -333,7 +333,7 @@ func (c *ClientV3) Encrypt(data string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ct, err := xcrypto.AESEncryptCBC(key, make([]byte, 16), []byte(data))
+	ct, err := crypts.AESEncryptCBC(key, make([]byte, 16), []byte(data))
 	if err != nil {
 		return "", err
 	}
@@ -350,7 +350,7 @@ func (c *ClientV3) Decrypt(encryptData string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return xcrypto.AESDecryptCBC(key, make([]byte, 16), data)
+	return crypts.AESDecryptCBC(key, make([]byte, 16), data)
 }
 
 // V3Option 自定义设置项
@@ -364,14 +364,14 @@ func WithV3Client(cli *http.Client) V3Option {
 }
 
 // WithV3PrivateKey 设置商户RSA私钥
-func WithV3PrivateKey(key *xcrypto.PrivateKey) V3Option {
+func WithV3PrivateKey(key *crypts.PrivateKey) V3Option {
 	return func(c *ClientV3) {
 		c.prvKey = key
 	}
 }
 
 // WithV3PublicKey 设置平台RSA公钥
-func WithV3PublicKey(key *xcrypto.PublicKey) V3Option {
+func WithV3PublicKey(key *crypts.PublicKey) V3Option {
 	return func(c *ClientV3) {
 		c.pubKey = key
 	}

@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/yiigo/sdk-go/internal/value"
+	"github.com/yiigo/sdk-go/internal/values"
 )
 
 type signfields struct {
@@ -129,7 +129,7 @@ func NewSigner(method, path string, options ...SignOption) *Signer {
 
 	if len(fields.params) != 0 {
 		buf.WriteString("?")
-		buf.WriteString(fields.params.Encode("=", "&", value.WithEmptyMode(value.EmptyOnlyKey)))
+		buf.WriteString(fields.params.Encode("=", "&", values.WithEmptyMode(values.EmptyOnlyKey)))
 	}
 
 	return &Signer{str: buf.String()}

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
 )
 
 // SignWithSHA1 事件消息sha1签名
@@ -29,7 +29,7 @@ func SignWithSHA1(token string, items ...string) string {
 // EventEncrypt 时间消息加密
 //
 //	[参考](https://developer.work.weixin.qq.com/document/path/90968)
-func EventEncrypt(receiveID, encodingAESKey, nonce string, plainText []byte) (*xcrypto.CipherText, error) {
+func EventEncrypt(receiveID, encodingAESKey, nonce string, plainText []byte) (*crypts.CipherText, error) {
 	key, err := base64.StdEncoding.DecodeString(encodingAESKey + "=")
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func EventEncrypt(receiveID, encodingAESKey, nonce string, plainText []byte) (*x
 	copy(encryptData[20:], plainText)
 	copy(encryptData[appidOffset:], receiveID)
 
-	return xcrypto.AESEncryptCBC(key, key[:aes.BlockSize], encryptData)
+	return crypts.AESEncryptCBC(key, key[:aes.BlockSize], encryptData)
 }
 
 // EventDecrypt 事件消息解密
@@ -62,7 +62,7 @@ func EventDecrypt(receiveID, encodingAESKey, cipherText string) ([]byte, error) 
 		return nil, err
 	}
 
-	plainText, err := xcrypto.AESDecryptCBC(key, key[:aes.BlockSize], decryptData)
+	plainText, err := crypts.AESDecryptCBC(key, key[:aes.BlockSize], decryptData)
 	if err != nil {
 		return nil, err
 	}

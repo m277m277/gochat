@@ -16,8 +16,8 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/value"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
+	"github.com/yiigo/sdk-go/internal/values"
 )
 
 // Client 银盛支付客户端
@@ -25,8 +25,8 @@ type Client struct {
 	host   string
 	mchNO  string
 	desKey string
-	prvKey *xcrypto.PrivateKey
-	pubKey *xcrypto.PublicKey
+	prvKey *crypts.PrivateKey
+	pubKey *crypts.PublicKey
 	client *resty.Client
 	logger func(ctx context.Context, err error, data map[string]string)
 }
@@ -48,7 +48,7 @@ func (c *Client) url(api string) string {
 
 // Encrypt 敏感数据DES加密
 func (c *Client) Encrypt(plain string) (string, error) {
-	b, err := xcrypto.DESEncryptECB([]byte(c.desKey), []byte(plain))
+	b, err := crypts.DESEncryptECB([]byte(c.desKey), []byte(plain))
 	if err != nil {
 		return "", err
 	}
@@ -57,7 +57,7 @@ func (c *Client) Encrypt(plain string) (string, error) {
 
 // MustEncrypt 敏感数据DES加密；若发生错误，则Panic
 func (c *Client) MustEncrypt(plain string) string {
-	b, err := xcrypto.DESEncryptECB([]byte(c.desKey), []byte(plain))
+	b, err := crypts.DESEncryptECB([]byte(c.desKey), []byte(plain))
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +70,7 @@ func (c *Client) Decrypt(cipher string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	plain, err := xcrypto.DESEncryptECB([]byte(c.desKey), b)
+	plain, err := crypts.DESEncryptECB([]byte(c.desKey), b)
 	if err != nil {
 		return "", err
 	}
@@ -133,14 +133,14 @@ func (c *Client) reqForm(reqID, serviceNO string, bizData V) (string, error) {
 		v.Set("bizReqJson", string(bizByte))
 	}
 
-	sign, err := c.prvKey.Sign(crypto.SHA1, []byte(v.Encode("=", "&", value.WithIgnoreKeys("sign"), value.WithEmptyMode(value.EmptyIgnore))))
+	sign, err := c.prvKey.Sign(crypto.SHA1, []byte(v.Encode("=", "&", values.WithIgnoreKeys("sign"), values.WithEmptyMode(values.EmptyIgnore))))
 	if err != nil {
 		return "", err
 	}
 
 	v.Set("sign", base64.StdEncoding.EncodeToString(sign))
 
-	return v.Encode("=", "&", value.WithEmptyMode(value.EmptyIgnore), value.WithKVEscape()), nil
+	return v.Encode("=", "&", values.WithEmptyMode(values.EmptyIgnore), values.WithKVEscape()), nil
 }
 
 func (c *Client) verifyResp(body []byte) (gjson.Result, error) {
@@ -162,7 +162,7 @@ func (c *Client) verifyResp(body []byte) (gjson.Result, error) {
 	v.Set("msg", ret.Get("msg").String())
 	v.Set("bizResponseJson", ret.Get("bizResponseJson").String())
 
-	err = c.pubKey.Verify(crypto.SHA1, []byte(v.Encode("=", "&", value.WithEmptyMode(value.EmptyIgnore))), sign)
+	err = c.pubKey.Verify(crypto.SHA1, []byte(v.Encode("=", "&", values.WithEmptyMode(values.EmptyIgnore))), sign)
 	if err != nil {
 		return internal.Fail(err)
 	}
@@ -195,7 +195,7 @@ func (c *Client) VerifyNotify(form url.Values) (gjson.Result, error) {
 	v.Set("signType", form.Get("signType"))
 	v.Set("bizResponseJson", form.Get("bizResponseJson"))
 
-	err = c.pubKey.Verify(crypto.SHA1, []byte(v.Encode("=", "&", value.WithEmptyMode(value.EmptyIgnore))), sign)
+	err = c.pubKey.Verify(crypto.SHA1, []byte(v.Encode("=", "&", values.WithEmptyMode(values.EmptyIgnore))), sign)
 	if err != nil {
 		return internal.Fail(err)
 	}
@@ -213,14 +213,14 @@ func WithHttpClient(cli *http.Client) Option {
 }
 
 // WithPrivateKey 设置商户RSA私钥
-func WithPrivateKey(key *xcrypto.PrivateKey) Option {
+func WithPrivateKey(key *crypts.PrivateKey) Option {
 	return func(c *Client) {
 		c.prvKey = key
 	}
 }
 
 // WithPublicKey 设置平台RSA公钥
-func WithPublicKey(key *xcrypto.PublicKey) Option {
+func WithPublicKey(key *crypts.PublicKey) Option {
 	return func(c *Client) {
 		c.pubKey = key
 	}

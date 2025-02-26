@@ -20,16 +20,16 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
 )
 
 // SafeMode 安全鉴权模式配置
 type SafeMode struct {
 	aesSN  string
 	aeskey string
-	prvKey *xcrypto.PrivateKey
+	prvKey *crypts.PrivateKey
 	pubSN  string
-	pubKey *xcrypto.PublicKey
+	pubKey *crypts.PublicKey
 }
 
 // MiniProgram 小程序
@@ -213,7 +213,7 @@ func (mp *MiniProgram) encrypt(log *internal.ReqLog, path string, query url.Valu
 	iv := internal.NonceByte(12)
 	aad := fmt.Sprintf("%s|%s|%d|%s", mp.url(path, nil), mp.appid, timestamp, mp.sfMode.aesSN)
 
-	ct, err := xcrypto.AESEncryptGCM(key, iv, data, []byte(aad), nil)
+	ct, err := crypts.AESEncryptGCM(key, iv, data, []byte(aad), nil)
 	if err != nil {
 		log.SetError(err)
 		return nil, err
@@ -315,7 +315,7 @@ func (mp *MiniProgram) decrypt(path string, header http.Header, body []byte) ([]
 
 	aad := fmt.Sprintf("%s|%s|%s|%s", mp.url(path, nil), mp.appid, header.Get(HeaderMPTimestamp), mp.sfMode.aesSN)
 
-	return xcrypto.AESDecryptGCM(key, iv, append(data, tag...), []byte(aad), nil)
+	return crypts.AESDecryptGCM(key, iv, append(data, tag...), []byte(aad), nil)
 }
 
 // Code2Session 通过临时登录凭证code完成登录流程
@@ -690,7 +690,7 @@ func (mp *MiniProgram) DecodeEncryptData(sessionKey, iv, encryptData string) ([]
 	if err != nil {
 		return nil, fmt.Errorf("encrypt_data base64.decode error: %w", err)
 	}
-	return xcrypto.AESDecryptCBC(keyBlock, ivBlock, data)
+	return crypts.AESDecryptCBC(keyBlock, ivBlock, data)
 }
 
 // VerifyEventMsg 验证事件消息
@@ -773,14 +773,14 @@ func WithMPAesKey(serialNO, key string) MPOption {
 }
 
 // WithMPPrivateKey 设置小程序RSA私钥
-func WithMPPrivateKey(key *xcrypto.PrivateKey) MPOption {
+func WithMPPrivateKey(key *crypts.PrivateKey) MPOption {
 	return func(mp *MiniProgram) {
 		mp.sfMode.prvKey = key
 	}
 }
 
 // WithMPPublicKey 设置小程序平台RSA公钥
-func WithMPPublicKey(serialNO string, key *xcrypto.PublicKey) MPOption {
+func WithMPPublicKey(serialNO string, key *crypts.PublicKey) MPOption {
 	return func(mp *MiniProgram) {
 		mp.sfMode.pubSN = serialNO
 		mp.sfMode.pubKey = key

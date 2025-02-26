@@ -14,9 +14,9 @@ import (
 	"github.com/go-resty/resty/v2"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/value"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
-	"github.com/yiigo/sdk-go/internal/xhash"
+	"github.com/yiigo/sdk-go/internal/crypts"
+	"github.com/yiigo/sdk-go/internal/hashes"
+	"github.com/yiigo/sdk-go/internal/values"
 )
 
 // Pay 微信支付
@@ -196,15 +196,15 @@ func (p *Pay) PostTlsBuffer(ctx context.Context, path string, params V) ([]byte,
 }
 
 func (p *Pay) Sign(v V) string {
-	signStr := v.Encode("=", "&", value.WithIgnoreKeys("sign"), value.WithEmptyMode(value.EmptyIgnore)) + "&key=" + p.apikey
+	signStr := v.Encode("=", "&", values.WithIgnoreKeys("sign"), values.WithEmptyMode(values.EmptyIgnore)) + "&key=" + p.apikey
 	signType := v.Get("sign_type")
 	if len(signType) == 0 {
 		signType = v.Get("signType")
 	}
 	if len(signType) != 0 && SignAlgo(strings.ToUpper(signType)) == SignHMacSHA256 {
-		return strings.ToUpper(xhash.HMacSHA256(p.apikey, signStr))
+		return strings.ToUpper(hashes.HMacSHA256(p.apikey, signStr))
 	}
-	return strings.ToUpper(xhash.MD5(signStr))
+	return strings.ToUpper(hashes.MD5(signStr))
 }
 
 func (p *Pay) Verify(v V) error {
@@ -213,16 +213,16 @@ func (p *Pay) Verify(v V) error {
 	if len(signType) == 0 {
 		signType = v.Get("signType")
 	}
-	signStr := v.Encode("=", "&", value.WithIgnoreKeys("sign"), value.WithEmptyMode(value.EmptyIgnore)) + "&key=" + p.apikey
+	signStr := v.Encode("=", "&", values.WithIgnoreKeys("sign"), values.WithEmptyMode(values.EmptyIgnore)) + "&key=" + p.apikey
 	// hmac-sha256
 	if len(signType) != 0 && SignAlgo(strings.ToUpper(signType)) == SignHMacSHA256 {
-		if sign := strings.ToUpper(xhash.HMacSHA256(p.apikey, signStr)); sign != wxsign {
+		if sign := strings.ToUpper(hashes.HMacSHA256(p.apikey, signStr)); sign != wxsign {
 			return fmt.Errorf("sign verify failed, expect = %s, actual = %s", sign, wxsign)
 		}
 		return nil
 	}
 	// md5
-	if sign := strings.ToUpper(xhash.MD5(signStr)); sign != wxsign {
+	if sign := strings.ToUpper(hashes.MD5(signStr)); sign != wxsign {
 		return fmt.Errorf("sign verify failed, expect = %s, actual = %s", sign, wxsign)
 	}
 	return nil
@@ -234,7 +234,7 @@ func (p *Pay) DecryptRefund(encrypt string) (V, error) {
 	if err != nil {
 		return nil, err
 	}
-	plainText, err := xcrypto.AESDecryptECB([]byte(xhash.MD5(p.apikey)), cipherText)
+	plainText, err := crypts.AESDecryptECB([]byte(hashes.MD5(p.apikey)), cipherText)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (p *Pay) MinipRedpackJSAPI(appid, pkg string) V {
 
 	signStr := fmt.Sprintf("appId=%s&nonceStr=%s&package=%s&timeStamp=%s&key=%s", appid, v.Get("nonceStr"), v.Get("package"), v.Get("timeStamp"), p.apikey)
 
-	v.Set("paySign", xhash.MD5(signStr))
+	v.Set("paySign", hashes.MD5(signStr))
 
 	return v
 }

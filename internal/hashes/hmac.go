@@ -1,4 +1,4 @@
-package xhash
+package hashes
 
 import (
 	"crypto"
@@ -26,7 +26,7 @@ func HMacSHA256(key, str string) string {
 // HMac 计算指定hash算法的hmac值
 func HMac(hash crypto.Hash, key, str string) (string, error) {
 	if !hash.Available() {
-		return "", fmt.Errorf("xcrypto: requested xhash function (%s) is unavailable", hash.String())
+		return "", fmt.Errorf("hash function (%s) is unavailable", hash.String())
 	}
 	h := hmac.New(hash.New, []byte(key))
 	h.Write([]byte(str))

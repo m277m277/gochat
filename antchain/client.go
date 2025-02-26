@@ -15,17 +15,17 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
 )
 
 // Config 客户端配置
 type Config struct {
-	BizID      string              `json:"biz_id"`      // 链ID (a00e36c5)
-	TenantID   string              `json:"tenant_id"`   // 租户ID
-	AccessID   string              `json:"access_id"`   // AccessID
-	AccessKey  *xcrypto.PrivateKey `json:"access_key"`  // AccessKey
-	Account    string              `json:"account"`     // 链账户
-	MyKmsKeyID string              `json:"mykmskey_id"` // 托管标识
+	BizID      string             `json:"biz_id"`      // 链ID (a00e36c5)
+	TenantID   string             `json:"tenant_id"`   // 租户ID
+	AccessID   string             `json:"access_id"`   // AccessID
+	AccessKey  *crypts.PrivateKey `json:"access_key"`  // AccessKey
+	Account    string             `json:"account"`     // 链账户
+	MyKmsKeyID string             `json:"mykmskey_id"` // 托管标识
 }
 
 // Client 发送请求使用的客户端
@@ -43,10 +43,10 @@ type Client interface {
 	AsyncCallSolidity(ctx context.Context, contractName, methodSign, inputParams, outTypes string, gas int) (string, error)
 
 	// QueryTransaction 查询交易
-	QueryTransaction(ctx context.Context, xhash string) (string, error)
+	QueryTransaction(ctx context.Context, hash string) (string, error)
 
 	// QueryReceipt 查询交易回执
-	QueryReceipt(ctx context.Context, xhash string) (string, error)
+	QueryReceipt(ctx context.Context, hash string) (string, error)
 
 	// QueryBlockHeader 查询块头
 	QueryBlockHeader(ctx context.Context, blockNumber int64) (string, error)

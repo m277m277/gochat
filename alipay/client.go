@@ -15,8 +15,8 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/value"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
+	"github.com/yiigo/sdk-go/internal/values"
 )
 
 // Client 支付宝客户端
@@ -24,8 +24,8 @@ type Client struct {
 	gateway string
 	appid   string
 	aesKey  string
-	prvKey  *xcrypto.PrivateKey
-	pubKey  *xcrypto.PublicKey
+	prvKey  *crypts.PrivateKey
+	pubKey  *crypts.PublicKey
 	client  *resty.Client
 	logger  func(ctx context.Context, err error, data map[string]string)
 }
@@ -224,13 +224,13 @@ func (c *Client) verifyResp(key string, body []byte) (gjson.Result, error) {
 		return internal.Fail(err)
 	}
 
-	xhash := crypto.SHA256
+	h := crypto.SHA256
 	if ret.Get("sign_type").String() == "RSA" {
-		xhash = crypto.SHA1
+		h = crypto.SHA1
 	}
 
 	if errResp := ret.Get("error_response"); errResp.Exists() {
-		if err = c.pubKey.Verify(xhash, []byte(errResp.Raw), signByte); err != nil {
+		if err = c.pubKey.Verify(h, []byte(errResp.Raw), signByte); err != nil {
 			return internal.Fail(err)
 		}
 
@@ -243,7 +243,7 @@ func (c *Client) verifyResp(key string, body []byte) (gjson.Result, error) {
 	}
 
 	resp := ret.Get(key)
-	if err = c.pubKey.Verify(xhash, []byte(resp.Raw), signByte); err != nil {
+	if err = c.pubKey.Verify(h, []byte(resp.Raw), signByte); err != nil {
 		return internal.Fail(err)
 	}
 	return resp, nil
@@ -265,7 +265,7 @@ func (c *Client) Encrypt(data string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("aes_key base64.decode error: %w", err)
 	}
-	ct, err := xcrypto.AESEncryptCBC(key, make([]byte, 16), []byte(data))
+	ct, err := crypts.AESEncryptCBC(key, make([]byte, 16), []byte(data))
 	if err != nil {
 		return "", err
 	}
@@ -282,7 +282,7 @@ func (c *Client) Decrypt(encryptData string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("encrypt_data base64.decode error: %w", err)
 	}
-	return xcrypto.AESDecryptCBC(key, make([]byte, 16), data)
+	return crypts.AESDecryptCBC(key, make([]byte, 16), data)
 }
 
 // DecodeEncryptData 解析加密数据，如：授权的用户信息和手机号
@@ -319,13 +319,13 @@ func (c *Client) VerifyNotify(form url.Values) (V, error) {
 		}
 		v.Set(key, vals[0])
 	}
-	str := v.Encode("=", "&", value.WithEmptyMode(value.EmptyIgnore))
+	str := v.Encode("=", "&", values.WithEmptyMode(values.EmptyIgnore))
 
-	xhash := crypto.SHA256
+	h := crypto.SHA256
 	if form.Get("sign_type") == "RSA" {
-		xhash = crypto.SHA1
+		h = crypto.SHA1
 	}
-	if err = c.pubKey.Verify(xhash, []byte(str), sign); err != nil {
+	if err = c.pubKey.Verify(h, []byte(str), sign); err != nil {
 		return nil, err
 	}
 	return v, nil
@@ -342,14 +342,14 @@ func WithHttpClient(cli *http.Client) Option {
 }
 
 // WithPrivateKey 设置商户RSA私钥
-func WithPrivateKey(key *xcrypto.PrivateKey) Option {
+func WithPrivateKey(key *crypts.PrivateKey) Option {
 	return func(c *Client) {
 		c.prvKey = key
 	}
 }
 
 // WithPublicKey 设置平台RSA公钥
-func WithPublicKey(key *xcrypto.PublicKey) Option {
+func WithPublicKey(key *crypts.PublicKey) Option {
 	return func(c *Client) {
 		c.pubKey = key
 	}

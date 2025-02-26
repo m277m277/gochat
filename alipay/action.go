@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yiigo/sdk-go/internal/value"
+	"github.com/yiigo/sdk-go/internal/values"
 )
 
 type Action struct {
@@ -62,14 +62,14 @@ func (a *Action) Encode(c *Client) (string, error) {
 		v.Set("biz_content", bizContent)
 	}
 
-	sign, err := c.prvKey.Sign(crypto.SHA256, []byte(v.Encode("=", "&", value.WithEmptyMode(value.EmptyIgnore))))
+	sign, err := c.prvKey.Sign(crypto.SHA256, []byte(v.Encode("=", "&", values.WithEmptyMode(values.EmptyIgnore))))
 	if err != nil {
 		return "", err
 	}
 
 	v.Set("sign", base64.StdEncoding.EncodeToString(sign))
 
-	return v.Encode("=", "&", value.WithEmptyMode(value.EmptyIgnore), value.WithKVEscape()), nil
+	return v.Encode("=", "&", values.WithEmptyMode(values.EmptyIgnore), values.WithKVEscape()), nil
 }
 
 // ActionOption Action选项

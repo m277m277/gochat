@@ -1,4 +1,4 @@
-package xhash
+package hashes
 
 import (
 	"crypto"

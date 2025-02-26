@@ -14,14 +14,14 @@ import (
 	"github.com/go-resty/resty/v2"
 
 	"github.com/yiigo/sdk-go/internal"
-	"github.com/yiigo/sdk-go/internal/xcrypto"
+	"github.com/yiigo/sdk-go/internal/crypts"
 )
 
 // Client 杉德支付客户端
 type Client struct {
 	mchID  string
-	prvKey *xcrypto.PrivateKey
-	pubKey *xcrypto.PublicKey
+	prvKey *crypts.PrivateKey
+	pubKey *crypts.PublicKey
 	client *resty.Client
 	logger func(ctx context.Context, err error, data map[string]string)
 }
@@ -104,14 +104,14 @@ func WithHttpClient(cli *http.Client) Option {
 }
 
 // WithPrivateKey 设置商户RSA私钥
-func WithPrivateKey(key *xcrypto.PrivateKey) Option {
+func WithPrivateKey(key *crypts.PrivateKey) Option {
 	return func(c *Client) {
 		c.prvKey = key
 	}
 }
 
 // WithPublicKey 设置平台RSA公钥
-func WithPublicKey(key *xcrypto.PublicKey) Option {
+func WithPublicKey(key *crypts.PublicKey) Option {
 	return func(c *Client) {
 		c.pubKey = key
 	}
